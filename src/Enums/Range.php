@@ -8,6 +8,7 @@ enum Range: string
 {
     case TODAY = 'TODAY';
     case YESTERDAY = 'YESTERDAY';
+    case WTD = 'WTD';
     case MTD = 'MTD';
     case QTD = 'QTD';
     case YTD = 'YTD';
@@ -25,6 +26,10 @@ enum Range: string
             Range::YESTERDAY => [
                 $now->subDays(2)->startOfDay(),
                 $now->subDays(2),
+            ],
+            Range::WTD => [
+                $now->subWeek()->startOfWeek(),
+                $now->subWeek(),
             ],
             Range::MTD => [
                 $now->subMonthWithoutOverflow()->startOfMonth(),
@@ -54,6 +59,10 @@ enum Range: string
             Range::YESTERDAY => [
                 $now->subDay()->startOfDay(),
                 $now->subDay(),
+            ],
+            Range::WTD => [
+                $now->startOfWeek(),
+                $now,
             ],
             Range::MTD => [
                 $now->startOfMonth(),
