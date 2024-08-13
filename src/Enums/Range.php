@@ -54,7 +54,7 @@ enum Range: string
         return match ($this) {
             Range::TODAY => [
                 $this->convertToLocalTime($now->startOfDay()),
-                $this->convertToLocalTime($now),
+                $this->convertToLocalTime($now->endOfDay()),
             ],
             Range::YESTERDAY => [
                 $this->convertToLocalTime($now->subDay()->startOfDay()),
