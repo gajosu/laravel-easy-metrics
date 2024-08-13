@@ -5,11 +5,11 @@ namespace SaKanjo\EasyMetrics\Metrics;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\App;
-use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Traits\Conditionable;
 use Illuminate\Support\Traits\Macroable;
 use SaKanjo\EasyMetrics\Enums\GrowthRateType;
 use SaKanjo\EasyMetrics\Enums\Range;
+use Carbon\CarbonImmutable;
 
 abstract class Metric
 {
@@ -17,18 +17,13 @@ abstract class Metric
     use Macroable;
 
     protected Builder $query;
-
     protected string $type;
-
     protected string $column;
-
     protected int|Range|null $range = null;
-
     protected bool $withGrowthRate = false;
-
     protected ?string $dateColumn = null;
-
     protected GrowthRateType $growthRateType = GrowthRateType::Percentage;
+    protected ?string $timezone = null;
 
     /**
      * @var int[]|Range[]
@@ -40,14 +35,17 @@ abstract class Metric
 
     public function __construct(
         string|Builder $query,
+        ?string $timezone = null
     ) {
         $this->query = is_string($query) ? $query::query() : $query->clone();
+        $this->timezone = $timezone;
     }
 
-    public static function make(string|Builder $query): static
+    public static function make(string|Builder $query, ?string $timezone = null): static
     {
         return App::make(static::class, [
             'query' => $query,
+            'timezone' => $timezone,
         ]);
     }
 
@@ -89,7 +87,8 @@ abstract class Metric
 
     public function ranges(array $ranges): static
     {
-        $this->ranges = Arr::map($ranges,
+        $this->ranges = Arr::map(
+            $ranges,
             fn ($range) => is_string($range) ? Range::from($range) : $range
         );
 
@@ -142,8 +141,8 @@ abstract class Metric
         }
 
         return [
-            Date::now()->subDays($range * 2),
-            Date::now()->subDays($range),
+            $this->now()->subDays($range * 2),
+            $this->now()->subDays($range),
         ];
     }
 
@@ -156,9 +155,14 @@ abstract class Metric
         }
 
         return [
-            Date::now()->subDays($range),
-            Date::now(),
+            $this->now()->subDays($range),
+            $this->now(),
         ];
+    }
+
+    protected function now(): CarbonImmutable
+    {
+        return CarbonImmutable::now($this->timezone);
     }
 
     protected function transformResult(int|float $data): float

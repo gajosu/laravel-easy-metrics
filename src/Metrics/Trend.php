@@ -196,6 +196,8 @@ class Trend extends Metric
         }
 
         return match ($driver) {
+            $this->timezone = $this->timezone ?: Date::now()->getTimezone()->getName(),
+
             'sqlite' => match ($this->unit) {
                 'year' => "strftime('%Y', $dateColumn)",
                 'month' => "strftime('%Y-%m', $dateColumn)",
@@ -206,28 +208,28 @@ class Trend extends Metric
                 'minute' => "strftime('%Y-%m-%d %H:%M:00', $dateColumn)",
             },
             'mysql' => match ($this->unit) {
-                'year' => "date_format($dateColumn, '%Y')",
-                'month' => "date_format($dateColumn, '%Y-%m')",
-                'week' => "date_format($dateColumn, '%x-%v')",
-                'day' => "date_format($dateColumn, '%Y-%m-%d')",
-                'hour' => "date_format($dateColumn, '%Y-%m-%d %H:00')",
-                'minute' => "date_format($dateColumn, '%Y-%m-%d %H:%i:00')",
+                'year' => "date_format(CONVERT_TZ($dateColumn, '+00:00', '{$this->timezone}'), '%Y')",
+                'month' => "date_format(CONVERT_TZ($dateColumn, '+00:00', '{$this->timezone}'), '%Y-%m')",
+                'week' => "date_format(CONVERT_TZ($dateColumn, '+00:00', '{$this->timezone}'), '%x-%v')",
+                'day' => "date_format(CONVERT_TZ($dateColumn, '+00:00', '{$this->timezone}'), '%Y-%m-%d')",
+                'hour' => "date_format(CONVERT_TZ($dateColumn, '+00:00', '{$this->timezone}'), '%Y-%m-%d %H:00')",
+                'minute' => "date_format(CONVERT_TZ($dateColumn, '+00:00', '{$this->timezone}'), '%Y-%m-%d %H:%i:00')",
             },
             'pgsql' => match ($this->unit) {
-                'year' => "to_char($dateColumn, 'YYYY')",
-                'month' => "to_char($dateColumn, 'YYYY-MM')",
-                'week' => "to_char($dateColumn, 'IYYY-IW')",
-                'day' => "to_char($dateColumn, 'YYYY-MM-DD')",
-                'hour' => "to_char($dateColumn, 'YYYY-MM-DD HH24:00')",
-                'minute' => "to_char($dateColumn, 'YYYY-MM-DD HH24:mi:00')",
+                'year' => "to_char($dateColumn AT TIME ZONE '{$this->timezone}', 'YYYY')",
+                'month' => "to_char($dateColumn AT TIME ZONE '{$this->timezone}', 'YYYY-MM')",
+                'week' => "to_char($dateColumn AT TIME ZONE '{$this->timezone}', 'IYYY-IW')",
+                'day' => "to_char($dateColumn AT TIME ZONE '{$this->timezone}', 'YYYY-MM-DD')",
+                'hour' => "to_char($dateColumn AT TIME ZONE '{$this->timezone}', 'YYYY-MM-DD HH24:00')",
+                'minute' => "to_char($dateColumn AT TIME ZONE '{$this->timezone}', 'YYYY-MM-DD HH24:mi:00')",
             },
             'sqlsrv' => match ($this->unit) {
-                'year' => "FORMAT($dateColumn, 'yyyy')",
-                'month' => "FORMAT($dateColumn, 'yyyy-MM')",
-                'week' => "concat(YEAR($dateColumn), '-', datepart(ISO_WEEK, $dateColumn))",
-                'day' => "FORMAT($dateColumn, 'yyyy-MM-dd')",
-                'hour' => "FORMAT($dateColumn, 'yyyy-MM-dd HH:00')",
-                'minute' => "FORMAT($dateColumn, 'yyyy-MM-dd HH:mm:00')",
+                'year' => "FORMAT($dateColumn AT TIME ZONE '{$this->timezone}', 'yyyy')",
+                'month' => "FORMAT($dateColumn AT TIME ZONE '{$this->timezone}', 'yyyy-MM')",
+                'week' => "concat(YEAR($dateColumn), '-', datepart(ISO_WEEK, $dateColumn AT TIME ZONE '{$this->timezone}'))",
+                'day' => "FORMAT($dateColumn AT TIME ZONE '{$this->timezone}', 'yyyy-MM-dd')",
+                'hour' => "FORMAT($dateColumn AT TIME ZONE '{$this->timezone}', 'yyyy-MM-dd HH:00')",
+                'minute' => "FORMAT($dateColumn AT TIME ZONE '{$this->timezone}', 'yyyy-MM-dd HH:mm:00')",
             },
             default => throw new \InvalidArgumentException('Laravel Easy Metrics is not supported for this database.')
         };
@@ -248,7 +250,7 @@ class Trend extends Metric
 
     protected function getStartingDate(): CarbonImmutable
     {
-        $now = CarbonImmutable::now();
+        $now = $this->now();
         $range = $this->getRange() - 1;
 
         return match ($this->unit) {
@@ -279,7 +281,7 @@ class Trend extends Metric
     {
         $dateColumn = $this->getDateColumn();
         $startingDate = $this->getStartingDate();
-        $endingDate = Date::now();
+        $endingDate = $this->now();
 
         $expression = $this->getExpression();
         $column = $this->query->getQuery()->getGrammar()->wrap($this->column);

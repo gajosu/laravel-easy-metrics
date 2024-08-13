@@ -14,42 +14,42 @@ enum Range: string
     case YTD = 'YTD';
     case ALL = 'ALL';
 
-    public function getPreviousRange(): ?array
+    public function getPreviousRange(?string $timezone = null): ?array
     {
-        $now = CarbonImmutable::now();
+        $now = CarbonImmutable::now($timezone);
 
         return match ($this) {
             Range::TODAY => [
                 $now->subDay()->startOfDay(),
-                $now->subDay(),
+                $now->subDay()->endOfDay(),
             ],
             Range::YESTERDAY => [
                 $now->subDays(2)->startOfDay(),
-                $now->subDays(2),
+                $now->subDays(2)->endOfDay(),
             ],
             Range::WTD => [
                 $now->subWeek()->startOfWeek(),
-                $now->subWeek(),
+                $now->subWeek()->endOfWeek(),
             ],
             Range::MTD => [
                 $now->subMonthWithoutOverflow()->startOfMonth(),
-                $now->subMonthWithoutOverflow(),
+                $now->subMonthWithoutOverflow()->endOfMonth(),
             ],
             Range::QTD => [
                 $now->subQuarter()->startOfQuarter(),
-                $now->subQuarter(),
+                $now->subQuarter()->endOfQuarter(),
             ],
             Range::YTD => [
                 $now->subYear()->startOfYear(),
-                $now->subYear(),
+                $now->subYear()->endOfYear(),
             ],
             Range::ALL => null,
         };
     }
 
-    public function getRange(): ?array
+    public function getRange(?string $timezone = null): ?array
     {
-        $now = CarbonImmutable::now();
+        $now = CarbonImmutable::now($timezone);
 
         return match ($this) {
             Range::TODAY => [
@@ -58,7 +58,7 @@ enum Range: string
             ],
             Range::YESTERDAY => [
                 $now->subDay()->startOfDay(),
-                $now->subDay(),
+                $now->subDay()->endOfDay(),
             ],
             Range::WTD => [
                 $now->startOfWeek(),
