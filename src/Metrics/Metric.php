@@ -137,7 +137,7 @@ abstract class Metric
         $range = $this->getRange();
 
         if ($range instanceof Range) {
-            return $range->getPreviousRange();
+            return $range->getPreviousRange($this->timezone);
         }
 
         return [
@@ -151,7 +151,7 @@ abstract class Metric
         $range = $this->getRange();
 
         if ($range instanceof Range) {
-            return $range->getRange();
+            return $range->getRange($this->timezone);
         }
 
         return [
