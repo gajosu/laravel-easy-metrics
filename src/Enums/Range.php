@@ -20,28 +20,28 @@ enum Range: string
 
         return match ($this) {
             Range::TODAY => [
-                $now->subDay()->startOfDay(),
-                $now->subDay()->endOfDay(),
+                $this->convertToLocalTime($now->subDay()->startOfDay()),
+                $this->convertToLocalTime($now->subDay()->endOfDay()),
             ],
             Range::YESTERDAY => [
-                $now->subDays(2)->startOfDay(),
-                $now->subDays(2)->endOfDay(),
+                $this->convertToLocalTime($now->subDays(2)->startOfDay()),
+                $this->convertToLocalTime($now->subDays(2)->endOfDay()),
             ],
             Range::WTD => [
-                $now->subWeek()->startOfWeek(),
-                $now->subWeek()->endOfWeek(),
+                $this->convertToLocalTime($now->subWeek()->startOfWeek()),
+                $this->convertToLocalTime($now->subWeek()->endOfWeek()),
             ],
             Range::MTD => [
-                $now->subMonthWithoutOverflow()->startOfMonth(),
-                $now->subMonthWithoutOverflow()->endOfMonth(),
+                $this->convertToLocalTime($now->subMonthWithoutOverflow()->startOfMonth()),
+                $this->convertToLocalTime($now->subMonthWithoutOverflow()->endOfMonth()),
             ],
             Range::QTD => [
-                $now->subQuarter()->startOfQuarter(),
-                $now->subQuarter()->endOfQuarter(),
+                $this->convertToLocalTime($now->subQuarter()->startOfQuarter()),
+                $this->convertToLocalTime($now->subQuarter()->endOfQuarter()),
             ],
             Range::YTD => [
-                $now->subYear()->startOfYear(),
-                $now->subYear()->endOfYear(),
+                $this->convertToLocalTime($now->subYear()->startOfYear()),
+                $this->convertToLocalTime($now->subYear()->endOfYear()),
             ],
             Range::ALL => null,
         };
@@ -53,30 +53,35 @@ enum Range: string
 
         return match ($this) {
             Range::TODAY => [
-                $now->startOfDay(),
-                $now,
+                $this->convertToLocalTime($now->startOfDay()),
+                $this->convertToLocalTime($now),
             ],
             Range::YESTERDAY => [
-                $now->subDay()->startOfDay(),
-                $now->subDay()->endOfDay(),
+                $this->convertToLocalTime($now->subDay()->startOfDay()),
+                $this->convertToLocalTime($now->subDay()->endOfDay()),
             ],
             Range::WTD => [
-                $now->startOfWeek(),
-                $now,
+                $this->convertToLocalTime($now->startOfWeek()),
+                $this->convertToLocalTime($now),
             ],
             Range::MTD => [
-                $now->startOfMonth(),
-                $now,
+                $this->convertToLocalTime($now->startOfMonth()),
+                $this->convertToLocalTime($now),
             ],
             Range::QTD => [
-                $now->startOfQuarter(),
-                $now,
+                $this->convertToLocalTime($now->startOfQuarter()),
+                $this->convertToLocalTime($now),
             ],
             Range::YTD => [
-                $now->startOfYear(),
-                $now,
+                $this->convertToLocalTime($now->startOfYear()),
+                $this->convertToLocalTime($now),
             ],
             Range::ALL => null,
         };
+    }
+
+    protected function convertToLocalTime(CarbonImmutable $date): CarbonImmutable
+    {
+        return $date->setTimezone(CarbonImmutable::now()->getTimezone());
     }
 }

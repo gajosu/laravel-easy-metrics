@@ -194,15 +194,15 @@ class Trend extends Metric
         if (static::hasMacro($driver)) {
             return static::$driver($dateColumn, $this->unit);
         }
+        
+        $this->timezone = $this->timezone ?: Date::now()->getTimezone()->getName();
 
         return match ($driver) {
-            $this->timezone = $this->timezone ?: Date::now()->getTimezone()->getName(),
-
             'sqlite' => match ($this->unit) {
                 'year' => "strftime('%Y', $dateColumn)",
                 'month' => "strftime('%Y-%m', $dateColumn)",
                 'week' => "strftime('%Y-', $dateColumn) ||
-                        printf('%02d', strftime('%W', $dateColumn) + (1 - strftime('%W', strftime('%Y', $dateColumn) || '-01-04')) )",
+                printf('%02d', strftime('%W', $dateColumn) + (1 - strftime('%W', strftime('%Y', $dateColumn) || '-01-04')) )",
                 'day' => "strftime('%Y-%m-%d', $dateColumn)",
                 'hour' => "strftime('%Y-%m-%d %H:00', $dateColumn)",
                 'minute' => "strftime('%Y-%m-%d %H:%M:00', $dateColumn)",
@@ -254,25 +254,31 @@ class Trend extends Metric
         $range = $this->getRange() - 1;
 
         return match ($this->unit) {
-            'year' => $now
-                ->subYearsWithoutOverflow($range)
-                ->firstOfYear()
-                ->setTime(0, 0),
-            'month' => $now
-                ->subMonthsWithoutOverflow($range)
-                ->firstOfMonth()
-                ->setTime(0, 0),
-            'week' => $now
-                ->subWeeks($range)
-                ->startOfWeek()
-                ->setTime(0, 0),
-            'day' => $now
-                ->subDays($range)
-                ->setTime(0, 0),
-            'hour' => $now
-                ->subHours($range),
-            'minute' => $now
-                ->subMinutes($range),
+            'year' => $this->convertToLocalTime(
+                $now->subYearsWithoutOverflow($range)
+                    ->firstOfYear()
+                    ->setTime(0, 0)
+            ),
+            'month' => $this->convertToLocalTime(
+                $now->subMonthsWithoutOverflow($range)
+                    ->firstOfMonth()
+                    ->setTime(0, 0)
+            ),
+            'week' => $this->convertToLocalTime(
+                $now->subWeeks($range)
+                    ->startOfWeek()
+                    ->setTime(0, 0)
+            ),
+            'day' => $this->convertToLocalTime(
+                $now->subDays($range)
+                    ->setTime(0, 0)
+            ),
+            'hour' => $this->convertToLocalTime(
+                $now->subHours($range)
+            ),
+            'minute' => $this->convertToLocalTime(
+                $now->subMinutes($range)
+            ),
             default => throw new \InvalidArgumentException("Invalid unit: {$this->unit}"),
         };
     }
@@ -281,7 +287,7 @@ class Trend extends Metric
     {
         $dateColumn = $this->getDateColumn();
         $startingDate = $this->getStartingDate();
-        $endingDate = $this->now();
+        $endingDate = $this->convertToLocalTime($this->now());
 
         $expression = $this->getExpression();
         $column = $this->query->getQuery()->getGrammar()->wrap($this->column);
@@ -297,7 +303,10 @@ class Trend extends Metric
             ])
             ->toArray();
 
-        $periods = collect(CarbonPeriod::create($startingDate, "1 {$this->unit}", $endingDate))
+        $convertedStartingDate = $startingDate->setTimezone($this->timezone);
+        $convertedEndingDate = $endingDate->setTimezone($this->timezone);
+
+        $periods = collect(CarbonPeriod::create($convertedStartingDate, "1 {$this->unit}", $convertedEndingDate))
             ->mapWithKeys(fn (CarbonInterface $date) => [
                 $date->format($this->getFormat()) => 0,
             ])

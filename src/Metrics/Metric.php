@@ -141,8 +141,8 @@ abstract class Metric
         }
 
         return [
-            $this->now()->subDays($range * 2),
-            $this->now()->subDays($range),
+            $this->convertToLocalTime($this->now()->subDays($range * 2)),
+            $this->convertToLocalTime($this->now()->subDays($range)),
         ];
     }
 
@@ -155,14 +155,19 @@ abstract class Metric
         }
 
         return [
-            $this->now()->subDays($range),
-            $this->now(),
+            $this->convertToLocalTime($this->now()->subDays($range)),
+            $this->convertToLocalTime($this->now()),
         ];
     }
 
     protected function now(): CarbonImmutable
     {
         return CarbonImmutable::now($this->timezone);
+    }
+
+    protected function convertToLocalTime(CarbonImmutable $date): CarbonImmutable
+    {
+        return $date->setTimezone(CarbonImmutable::now()->getTimezone());
     }
 
     protected function transformResult(int|float $data): float
